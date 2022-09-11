@@ -17,9 +17,50 @@ model User {
   email     String   @unique
   name      String?
   role      Role     @default(USER)
+  passord String
+  allow Boolean?
 }
+
+
+model Project {
+    id        Int      @id @default(autoincrement())
+    name String
+    state   ProjectState     @default(OPEN)
+    createdAt DateTime @default(now())
+
+}
+ 
+ model Access {
+      id        Int      @id @default(autoincrement())
+      projectId Int
+      user_id Int
+      permit PermitEnum[]
+ }
+
+
+model Session {
+   id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  accessToken     String   @unique
+  userID      Int
+}
+
 
 enum Role {
   USER
   ADMIN
+}
+
+enum PermitEnum {
+  CREATE
+  DELETE
+  UPDATE
+  READ
+}
+
+
+enum ProjectState {
+  PROPOSE
+  OPEN
+  CLOSE
 }

@@ -1,29 +1,42 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 
-import { prisma, PrismaClient } from "@prisma/client"
+import { PrismaClient } from "@prisma/client"
+import { HashPassword } from "../../workers/utils";
+export const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-  if (req.method === 'GET') {
-    console.log('Worked')
-    return res.status(200).json({ name: 'John Doe' })
-
-    // Process a POST request
+  try {
+    
+    
+    if (req.method === 'POST') 
+      {
+  
+        let findUserByEmail = await prisma.user.findUnique({ where: { email: req.body.email } })
+        if (findUserByEmail) return res.status(400).send({ msg: "User already exist" });
+    
+        let data = await prisma.user.create({ data: { createdAt: new Date(), email: req.body.email, name: "Taimoor", passord: HashPassword(req.body.password) } })
+        return res.status(200).json({ name: data })
+    
+      }    
+  
+  
+    else {
+      return res.status(404).json({ name: 'Not a valid route' })
+  
+    }
+    
+  } catch (error) {
+    console.log(error)
   }
-
-  if (req.method === 'POST') {
-    let prisma = new PrismaClient();
-    console.log(prisma.user, 'here is user')
-
-    let data = await prisma.user.create({ data: { createdAt: new Date(), email: "taimoormuhammad951@gmail.com", name: "Taimoor" } })
-    console.log('Worked')
-    return res.status(200).json({ name: data })
-
-    // Process a POST request
-  }
-  else {
-    console.log('NO')
-    return res.status(404).json({ name: 'NOt a valid route' })
-
-  }
-
+  
 }
+
+
+// export const prisma = prisma;
+
+/**@NOTE admin id password
+   * {
+      "email" : "admin@gmail.com",
+      "password" : "admin123"
+  }
+   */
