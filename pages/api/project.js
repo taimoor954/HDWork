@@ -3,6 +3,7 @@
 import { hashPassword, jwtVerify, VerifyHashedPassword } from "../../workers/utils";
 import { prisma } from "./hello";
 import * as jwt from 'jsonwebtoken'
+import { CreateProject } from "../../lib/joi";
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -20,6 +21,11 @@ export default async function handler(req, res) {
     const decodedData = await jwtVerify(token);
 
     req.user = decodedData;
+
+    const payload = {...req.body}
+    const validation = CreateProject(payload)
+    if (validation.errored) return res.status(400).send({ msg: "validation error", errors: validation.errors })
+
 
     let findUserByEmail = await prisma.user.findUnique({ where: { id: req.user.userID } })
     if (!findUserByEmail) return res.status(400).send({ msg: "Incorrect ID" });

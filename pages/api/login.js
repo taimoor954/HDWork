@@ -3,6 +3,7 @@
 import { hashPassword, VerifyHashedPassword } from "../../workers/utils";
 import { prisma } from "./hello";
 import * as jwt from 'jsonwebtoken'
+import { LoginValidator } from "../../lib/joi";
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -10,14 +11,18 @@ export default async function handler(req, res) {
     return res.status(200).json({ name: 'John Doe' })
 
   }
-  
+
   if (req.method === 'POST') {
-    
+
+    let payloadBody = { ...req.body }
+    const validation = LoginValidator(payloadBody)
+    if (validation.errored) return res.status(400).send({ msg: "validation error", errors: validation.errors })
+
     let findUserByEmail = await prisma.user.findUnique({ where: { email: req.body.email } })
     if (!findUserByEmail) return res.status(400).send({ msg: "Incorrect email or password" });
 
 
-   const passwordVerification = VerifyHashedPassword( req.body.password,findUserByEmail.passord)
+    const passwordVerification = VerifyHashedPassword(req.body.password, findUserByEmail.passord)
     if (!passwordVerification) return res.status(400).send({ msg: "Email or password is incorrect" })
 
     delete findUserByEmail.passord
@@ -31,7 +36,7 @@ export default async function handler(req, res) {
 
     // let data = await prisma.user.create({ data: { createdAt: new Date(), email: req.body.email, name: "Taimoor", passord: hashPassword(req.body.password), role: "ADMIN" } })
     return res.status(200).json({ name: findUserByEmail, jwtToken })
-    
+
   }
   else {
     return res.status(404).json({ name: 'Not a valid route' })

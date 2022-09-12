@@ -3,6 +3,7 @@
 import { hashPassword, jwtVerify, VerifyHashedPassword } from "../../workers/utils";
 import { prisma } from "./hello";
 import * as jwt from 'jsonwebtoken'
+import { AccessValidation } from "../../lib/joi";
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -21,8 +22,12 @@ export default async function handler(req, res) {
     req.user = decodedData;
     if(req.user.role != 'ADMIN') return res.status(401).send({msg : "Not allowed to use this api"})
 
+    const payload ={...req.body};
+    const validation = AccessValidation(payload)
+    if(validation.errored) return res.status(400).send({msg : "Validation error", errros : validation.errors})
 
-   let checkaccess=  await prisma.access.findFirstOrThrow({where : {
+
+   let checkaccess=  await prisma.access.findFirst({where : {
         user_id : req.body.user_id,
         projectId : req.body.projectId
     }})
